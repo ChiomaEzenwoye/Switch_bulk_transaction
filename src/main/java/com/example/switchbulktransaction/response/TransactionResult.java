@@ -11,9 +11,5 @@ public class TransactionResult {
     private String transactionId;
     private String status;
     private String reason;
-    
-    public TransactionResult(String transactionId, String status) {
-        this.transactionId = transactionId;
-        this.status = status;
-    }
+
 }

@@ -25,7 +25,8 @@ public class BulkTransactionService {
     private final TransactionServiceClient transactionServiceClient;
     private final Counter successCounter;
     private final Counter failureCounter;
-    
+
+
     public BulkTransactionService(TransactionServiceClient transactionServiceClient, 
                                   MeterRegistry meterRegistry) {
         this.transactionServiceClient = transactionServiceClient;
@@ -63,7 +64,7 @@ public class BulkTransactionService {
                         transactionServiceClient.processTransaction(serviceRequest);
                 
                 if ("SUCCESS".equalsIgnoreCase(serviceResponse.getStatus())) {
-                    results.add(new TransactionResult(transactionId, "SUCCESS"));
+                    results.add(new TransactionResult(transactionId, "SUCCESS", "SUCCESS"));
                     successCounter.increment();
                     log.info("Transaction {} processed successfully in batch: {}", transactionId, batchId);
                 } else {
