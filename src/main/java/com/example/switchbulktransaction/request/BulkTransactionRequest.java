@@ -20,5 +20,5 @@ public class BulkTransactionRequest {
     
     @NotEmpty(message = "Transactions list cannot be empty")
     @Valid
-    private List<TransactionServiceRequest> transactions;
+    private List<TransactionDto> transactions;
 }
