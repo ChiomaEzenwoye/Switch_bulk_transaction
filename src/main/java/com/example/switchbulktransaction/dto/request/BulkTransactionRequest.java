@@ -1,6 +1,5 @@
-package com.example.switchbulktransaction.request;
+package com.example.switchbulktransaction.dto.request;
 
-import com.example.switchbulktransaction.dto.TransactionDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -20,5 +19,8 @@ public class BulkTransactionRequest {
     
     @NotEmpty(message = "Transactions list cannot be empty")
     @Valid
-    private List<TransactionServiceRequest> transactions;
+    private List<TransactionRequest> transactions;
+
+
+
 }
