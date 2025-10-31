@@ -1,7 +1,6 @@
 package com.example.switchbulktransaction.mapper;
 
-import com.example.switchbulktransaction.dto.request.TransactionRequest;
-import com.example.switchbulktransaction.dto.response.TransactionResponse;
+import com.example.switchbulktransaction.model.dto.response.TransactionResponse;
 import com.example.switchbulktransaction.enumeration.TransactionStatus;
 
 

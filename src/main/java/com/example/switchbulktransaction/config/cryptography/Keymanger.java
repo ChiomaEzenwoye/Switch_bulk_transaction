@@ -1,15 +1,12 @@
 package com.example.switchbulktransaction.config.cryptography;
 
+
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.security.KeyFactory;
-import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -19,7 +16,6 @@ import java.security.spec.X509EncodedKeySpec;
 @Slf4j
 public class Keymanger {
 
-    private static final Logger log = LoggerFactory.getLogger(Keymanger.class);
     private PrivateKey privateKey;
     private PublicKey publicKey;
 
@@ -69,11 +65,7 @@ public class Keymanger {
 
     private byte[] getEndcodedKey(String path){
         boolean isPrivateKey = path.startsWith("classpath:config/private");
-//        String replaceStart =  isPrivateKey ? "-----BEGIN PRIVATE KEY-----" : "-----BEGIN PUBLIC KEY-----";
-//        String replaceEnd =  isPrivateKey ? "-----END PRIVATE KEY-----" : "-----END PUBLIC KEY-----";
-
         try {
-            log.info("Class Path Passed: {}", path);
             ClassPathResource resource = new ClassPathResource(path);
             byte[] bytes;
             try (InputStream inputStream = resource.getInputStream()) {

@@ -1,4 +1,4 @@
-package com.example.switchbulktransaction.dto.request;
+package com.example.switchbulktransaction.model.dto.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -16,11 +16,9 @@ public class BulkTransactionRequest {
     
     @NotBlank(message = "Batch ID is required")
     private String batchId;
-    
-    @NotEmpty(message = "Transactions list cannot be empty")
+
     @Valid
+    @NotEmpty(message = "Transactions list cannot be empty")
     private List<TransactionRequest> transactions;
-
-
 
 }

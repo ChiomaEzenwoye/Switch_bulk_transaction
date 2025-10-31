@@ -56,8 +56,9 @@ public class SecurityConfig {
     @Bean public SecurityFilterChain resourceServerSecurity(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(
-                        auth -> auth .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        auth -> auth .requestMatchers("/api/admin/**","/actuator/**" ).hasRole("ADMIN")
                                 .requestMatchers("/api/v1/bulk-transactions").hasRole("USER")
+                                .requestMatchers("/h2-console/**").permitAll()
                                 .anyRequest().authenticated() )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())) );

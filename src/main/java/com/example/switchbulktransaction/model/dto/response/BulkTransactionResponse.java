@@ -1,4 +1,4 @@
-package com.example.switchbulktransaction.dto.response;
+package com.example.switchbulktransaction.model.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
