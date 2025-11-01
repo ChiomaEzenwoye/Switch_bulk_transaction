@@ -1,5 +1,6 @@
 package com.example.switchbulktransaction.service;
 
+import ch.qos.logback.core.util.StringUtil;
 import com.example.switchbulktransaction.enumeration.TransactionStatus;
 import com.example.switchbulktransaction.model.dto.request.BulkTransactionRequest;
 import com.example.switchbulktransaction.model.dto.request.TransactionRequest;
@@ -14,6 +15,7 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 @Slf4j
 @Service
@@ -44,16 +47,29 @@ public class BulkProcessingServiceImplementation implements BulkProcessingServic
                     try {
                         processSuccessFullTransaction(request, txRequest);
                         results.add(new TransactionResponse(txRequest.getTransactionId(), TransactionStatus.SUCCESS, null));
-                    } catch (Exception e) {
-                        processFailedTransactions(request, txRequest, e);
-                        results.add(new TransactionResponse(txRequest.getTransactionId(), TransactionStatus.FAILED, e.getMessage()));
+
+                    } catch (DataIntegrityViolationException ex) {
+                        LoggerUtils.logTransaction(txRequest.getTransactionId(), request.getBatchId());
+                        processFailedTransactions(request, txRequest, ex);
+                        results.add(new TransactionResponse(txRequest.getTransactionId(), TransactionStatus.FAILED,"DataIntegrityViolationException" ));
+
+                    } catch (Exception ex) {
+                        processFailedTransactions(request, txRequest, ex);
+                        results.add(new TransactionResponse(txRequest.getTransactionId(), TransactionStatus.FAILED, "Unknwon error"));
                     }
+
                 }))
                 .toList();
+        try {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        } catch (CompletionException ex) {
+            // Log root cause, but do NOT rethrow — we want to return partial results
+            log.error("One or more async transactions failed: {}", ex.getCause().getMessage());
+        }
 
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         response.setResults(results);
         return response;
+
     }
 
     private void processFailedTransactions(BulkTransactionRequest request, TransactionRequest txRequest, Exception e) {
