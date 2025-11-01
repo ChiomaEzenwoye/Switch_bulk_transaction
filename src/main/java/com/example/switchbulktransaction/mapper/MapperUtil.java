@@ -11,7 +11,7 @@ public class MapperUtil {
          TransactionResponse transactionResponse = new TransactionResponse();
          transactionResponse.setTransactionId(transactionId);
          transactionResponse.setStatus(status);
-         transactionResponse.setMessage(message);
+         transactionResponse.setReason(message);
         return transactionResponse;
     }
 
