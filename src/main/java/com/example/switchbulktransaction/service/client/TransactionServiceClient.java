@@ -30,7 +30,7 @@ public class TransactionServiceClient {
 
 
     @Retry(name = "transactionRetry", fallbackMethod = "handleRetryFailure")
-    @CircuitBreaker(name = "transactionService", fallbackMethod = "handleCircuitBreaker")
+//    @CircuitBreaker(name = "transactionService", fallbackMethod = "handleCircuitBreaker")
     public ResponseEntity<String> sendTransaction(TransactionRequest request) {
         return restTemplate
                 .postForEntity(transactionServiceUrl + transactionServiceEndPoint, request, String.class);
