@@ -11,9 +11,9 @@ import com.example.switchbulktransaction.service.client.TransactionServiceClient
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,8 +36,8 @@ class BulkProcessingServiceImplementationTest {
     }
 
     private BulkTransactionRequest createSampleRequest() {
-        TransactionRequest t1 = new TransactionRequest("tx001", "111", "222", 100.00);
-        TransactionRequest t2 = new TransactionRequest("tx002", "111", "333", 2000.0);
+        TransactionRequest t1 = new TransactionRequest("tx001", "111", "222", BigDecimal.valueOf(100.00));
+        TransactionRequest t2 = new TransactionRequest("tx002", "111", "333", BigDecimal.valueOf(2000.0));
 
         BulkTransactionRequest req = new BulkTransactionRequest();
         req.setBatchId("BATCH-001");
@@ -45,6 +45,8 @@ class BulkProcessingServiceImplementationTest {
         return req;
     }
 
+    // ✅ Test Case: Handle  successful scenario
+// We mock this by making the  call success
     @Test
     void shouldProcessAllTransactionsSuccessfully() {
         // Mock client to always succeed
@@ -56,8 +58,12 @@ class BulkProcessingServiceImplementationTest {
         assertThat(response.getResults()).hasSize(2);
         assertThat(response.getResults()).allMatch(r -> r.getStatus() == TransactionStatus.SUCCESS);
         verify(transactionRepository, times(2)).save(any(Transaction.class));
-    }
+     }
 
+    // ✅ Test Case: Handle partial failure
+   // This test makes sure that if one transaction goes through and another one fails,
+   // the system records one as SUCCESS and the other as FAILED.
+   // We fake this by making the first call succeed and the second one throw an error.
     @Test
     void shouldHandlePartialFailure() {
         // One success, one failure
@@ -75,6 +81,9 @@ class BulkProcessingServiceImplementationTest {
         assertThat(successCount).isEqualTo(1);
         assertThat(failCount).isEqualTo(1);
     }
+
+    // ✅ Test Case: Handle  failed scenario
+    // We mock this by making the runtimeException success
 
     @Test
     void shouldHandleCompleteFailure() {
