@@ -14,5 +14,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("SELECT new com.example.switchbulktransaction.model.dto.response.TransactionMetrics(t.transactionStatus, COUNT(t)) " +
             "FROM Transaction t GROUP BY t.transactionStatus")
     List<TransactionMetrics> getTransactionMetricsByTransactionStatus();
+    List<Transaction> findByTransactionIdIn(List<String> transactionIds);
 
 }
