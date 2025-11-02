@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionSystemException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,44 +34,55 @@ public class BulkProcessingServiceImplementation implements BulkProcessingServic
     private final TransactionServiceClient transactionServiceClient;
     private final TransactionRepository transactionRepository;
 
-    @Transactional
-    public BulkTransactionResponse processBulkTransactions(BulkTransactionRequest request) {
+   @Transactional
+   public BulkTransactionResponse processBulkTransactions(BulkTransactionRequest request) {
 
         BulkTransactionResponse response = new BulkTransactionResponse();
         response.setBatchId(request.getBatchId());
 
         List<TransactionResponse> results = Collections.synchronizedList(new ArrayList<>());
 
+        // Process all transactions asynchronously
         List<CompletableFuture<Void>> futures = request.getTransactions().stream()
                 .map(txRequest -> CompletableFuture.runAsync(() -> {
                     LoggerUtils.logTransaction(txRequest.getTransactionId(), request.getBatchId());
+
                     try {
-                        processSuccessFullTransaction(request, txRequest);
-                        results.add(new TransactionResponse(txRequest.getTransactionId(), TransactionStatus.SUCCESS, null));
-
-                    } catch (DataIntegrityViolationException ex) {
-                        LoggerUtils.logTransaction(txRequest.getTransactionId(), request.getBatchId());
-                        processFailedTransactions(request, txRequest, ex);
-                        results.add(new TransactionResponse(txRequest.getTransactionId(), TransactionStatus.FAILED,"DataIntegrityViolationException" ));
-
+                        processIndividualTransaction(request, txRequest, results);
                     } catch (Exception ex) {
-                        processFailedTransactions(request, txRequest, ex);
-                        results.add(new TransactionResponse(txRequest.getTransactionId(), TransactionStatus.FAILED, "Unknwon error"));
+                        log.error("Unexpected error while processing {}: {}", txRequest.getTransactionId(), ex.getMessage());
+                        results.add(new TransactionResponse(
+                                txRequest.getTransactionId(),
+                                TransactionStatus.FAILED,
+                                "Unexpected system error"
+                        ));
                     }
-
                 }))
                 .toList();
-        try {
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        } catch (CompletionException ex) {
-            // Log root cause, but do NOT rethrow — we want to return partial results
-            log.error("One or more async transactions failed: {}", ex.getCause().getMessage());
-        }
 
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         response.setResults(results);
         return response;
-
     }
+
+    @Transactional
+    public void processIndividualTransaction(BulkTransactionRequest request, TransactionRequest txRequest, List<TransactionResponse> results) {
+        try {
+            processSuccessFullTransaction(request, txRequest);
+            results.add(new TransactionResponse(txRequest.getTransactionId(), TransactionStatus.SUCCESS, null));
+
+        } catch (Exception ex) {
+            // Handle any other unexpected failures
+            log.error("Failed to process transaction {}: {}", txRequest.getTransactionId(), ex.getMessage());
+            processFailedTransactions(request, txRequest, ex);
+            results.add(new TransactionResponse(
+                    txRequest.getTransactionId(),
+                    TransactionStatus.FAILED,
+                    "Processing error: " + ex.getMessage()
+            ));
+        }
+    }
+
 
     private void processFailedTransactions(BulkTransactionRequest request, TransactionRequest txRequest, Exception e) {
         Transaction transaction = new Transaction();
