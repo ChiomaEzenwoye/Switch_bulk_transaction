@@ -11,6 +11,7 @@ import com.example.switchbulktransaction.repository.TransactionRepository;
 import com.example.switchbulktransaction.service.client.TransactionServiceClient;
 import com.example.switchbulktransaction.util.LoggerUtils;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -34,28 +35,15 @@ public class BulkProcessingServiceImplementation implements BulkProcessingServic
         response.setBatchId(request.getBatchId());
 
         List<TransactionResponse> results = Collections.synchronizedList(new ArrayList<>());
+      List<TransactionRequest> sanitizeRequest =   checkDuplicateAndValidTransactions(request.getTransactions(), results);
 
-        //  Validate transactions (check for duplicates)
-        List<TransactionRequest> duplicates = findDuplicateTransactions(request.getTransactions());
-        List<TransactionRequest> newTransactions = request.getTransactions().stream()
-                .filter(tx -> duplicates.stream()
-                        .noneMatch(dup -> dup.getTransactionId().equals(tx.getTransactionId())))
-                .toList();
-
-        // Add duplicates to the result
-        duplicates.forEach(dup ->
-                results.add(new TransactionResponse(
-                        dup.getTransactionId(),
-                        TransactionStatus.FAILED,
-                        "Duplicate transaction found"))
-        );
 
         //Process only new transactions
-        List<CompletableFuture<Void>> futures = newTransactions.stream()
+        List<CompletableFuture<Void>> futures = sanitizeRequest.stream()
                 .map(txRequest -> CompletableFuture.runAsync(() -> {
                     LoggerUtils.logTransaction(txRequest.getTransactionId(), request.getBatchId());
                     try {
-                        processSuccessFullTransaction(request, txRequest);
+                         processSuccessFullTransaction(request, txRequest);
                         results.add(new TransactionResponse(txRequest.getTransactionId(), TransactionStatus.SUCCESS, null));
                     } catch (Exception e) {
                         processFailedTransactions(request, txRequest, e);
@@ -70,6 +58,25 @@ public class BulkProcessingServiceImplementation implements BulkProcessingServic
         return response;
     }
 
+
+    private List<TransactionRequest> checkDuplicateAndValidTransactions(List<TransactionRequest> transactions, List<TransactionResponse> results) {
+        List<TransactionRequest> validTransactions = new ArrayList<>();
+        transactions.forEach(transactionRequest -> {
+            boolean isDuplicate = transactionRepository.existsByTransactionId(transactionRequest.getTransactionId());
+            if (isDuplicate){
+                var response = TransactionResponse.builder()
+                        .transactionId(transactionRequest.getTransactionId())
+                        .reason("Duplicate Transaction")
+                        .status(TransactionStatus.FAILED)
+                        .build();
+                results.add(response);
+            }else {
+                validTransactions.add(transactionRequest);
+            }
+        });
+
+        return validTransactions;
+    }
     /**
      * Finds duplicate transactions based on transactionId already existing in DB.
      */
