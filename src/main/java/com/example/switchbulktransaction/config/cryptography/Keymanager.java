@@ -14,13 +14,13 @@ import java.security.spec.X509EncodedKeySpec;
 
 @Service
 @Slf4j
-public class Keymanger {
+public class Keymanager {
 
     private PrivateKey privateKey;
     private PublicKey publicKey;
 
 
-    public Keymanger(){
+    public Keymanager(){
         this.privateKey =  loadPrivateKey("config/private_key.pem");
         this.publicKey =  loadPublicKey("config/public_key.pem");
     }

@@ -1,7 +1,7 @@
 package com.example.switchbulktransaction.config.security;
 
 
-import com.example.switchbulktransaction.config.cryptography.Keymanger;
+import com.example.switchbulktransaction.config.cryptography.Keymanager;
 import com.nimbusds.jose.jwk.*;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
@@ -30,7 +30,6 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.Collection;
@@ -44,7 +43,7 @@ import java.util.stream.Collectors;
 public class SecurityConfig {
 
     @Autowired
-    private Keymanger keymanger;
+    private Keymanager keymanager;
 
     @Bean
     @Order(1)
@@ -104,8 +103,8 @@ public class SecurityConfig {
 
     @Bean
     public JWKSource<SecurityContext> jwkSource() throws Exception {
-        RSAKey rsaKey = new RSAKey.Builder((java.security.interfaces.RSAPublicKey) keymanger.getPublicKey())
-                .privateKey(keymanger.getPrivateKey())
+        RSAKey rsaKey = new RSAKey.Builder((java.security.interfaces.RSAPublicKey) keymanager.getPublicKey())
+                .privateKey(keymanager.getPrivateKey())
                 .keyID("auth-server-key")
                 .build();
         return new ImmutableJWKSet<>(new JWKSet(rsaKey));
